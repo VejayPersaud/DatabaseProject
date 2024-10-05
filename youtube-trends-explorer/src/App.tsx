@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
+import { Input } from './components/ui/input';
+import { Button } from './components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
-const YouTubeTrendsApp = () => {
-  const [timeAggregation, setTimeAggregation] = useState('daily');
-  const [topVideosPage, setTopVideosPage] = useState(1);
+const YouTubeTrendsApp: React.FC = () => {
+  const [timeAggregation, setTimeAggregation] = useState<string>('daily');
+  const [topVideosPage, setTopVideosPage] = useState<number>(1);
 
   // Dummy data for trend overview
   const trendData = [
@@ -49,7 +49,7 @@ const YouTubeTrendsApp = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
-                    <Select onValueChange={setTimeAggregation}>
+                    <Select onValueChange={setTimeAggregation} value={timeAggregation}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select time aggregation" />
                       </SelectTrigger>
@@ -117,8 +117,8 @@ const YouTubeTrendsApp = () => {
                     </table>
                   </div>
                   <div className="mt-4 flex justify-between">
-                    <Button onClick={() => setTopVideosPage(prev => Math.max(1, prev - 1))}>Previous</Button>
-                    <Button onClick={() => setTopVideosPage(prev => prev + 1)}>Next</Button>
+                    <Button onClick={() => setTopVideosPage((prev) => Math.max(1, prev - 1))}>Previous</Button>
+                    <Button onClick={() => setTopVideosPage((prev) => prev + 1)}>Next</Button>
                   </div>
                 </CardContent>
               </Card>
