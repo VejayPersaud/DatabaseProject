@@ -1,35 +1,89 @@
 const express = require('express');
-const db = require('./db');  //Import the db module
+const cors = require('cors');
+const db = require('./db');
 
 const app = express();
-const PORT = 5000;  //Port number where the backend server will run
+const PORT = 5000;
 
-//Function to start the app and initialize the database
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Initialize the database and start the server
 async function startApp() {
   try {
-    await db.initialize();  //Initialize database connection
-    console.log('Database connection initialized');
-    
-    //Start the server only after the database is connected
+    await db.initialize();
+    console.log('Database connection pool initialized');
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch (err) {
-    console.error('Error starting application', err);
-    process.exit(1);  //Exit if there’s a connection issue
+    console.error('Error starting application:', err.message);
+    process.exit(1);
   }
 }
 
-startApp();  //Call this function to start the app
+startApp();
 
-//Test route to verify database connection
-app.get('/test-db', async (req, res) => {
-  try {
-    //Simple query to test the database connection
-    const result = await db.simpleExecute('SELECT * FROM PerformanceMetrics FETCH FIRST 50 ROWS ONLY');
-    res.json(result.rows);  //Send the result back as JSON
-  } catch (error) {
-    console.error('Error executing query:', error);
-    res.status(500).json({ error: 'Database connection failed' });
+// Trend Overview - Dynamic Time Aggregation
+app.get('/trends', async (req, res) => {
+  // Extract aggregation type from query params, default to 'daily'
+  const { aggregation } = req.query;
+  let truncFormat;
+
+  // Set the truncation format based on the aggregation level
+  switch (aggregation) {
+    case 'weekly':
+      truncFormat = 'IW'; // ISO week
+      break;
+    case 'monthly':
+      truncFormat = 'MM'; // Month
+      break;
+    case 'daily':
+    default:
+      truncFormat = 'DD'; // Day
+      break;
   }
+
+  const query = `
+    SELECT TRUNC(timestamp, '${truncFormat}') AS period, 
+           AVG(views) AS avgViews, 
+           AVG(likes) AS avgLikes, 
+           AVG(dislikes) AS avgDislikes, 
+           AVG(comments) AS avgComments
+    FROM PerformanceMetrics
+    GROUP BY TRUNC(timestamp, '${truncFormat}')
+    ORDER BY TRUNC(timestamp, '${truncFormat}') ASC
+    FETCH FIRST 100 ROWS ONLY
+  `;
+
+  try {
+    console.log('Generated Query:', query);
+    const result = await db.simpleExecute(query);
+    console.log('Query Result:', result);
+
+    if (result && result.rows && result.rows.length > 0) {
+      res.json(result.rows);
+    } else {
+      res.status(404).json({ error: 'No data found in PerformanceMetrics' });
+    }
+  } catch (err) {
+    console.error('Error fetching trend data:', err.message);
+    res.status(500).json({ error: 'Failed to fetch trend data', details: err.message });
+  }
+});
+
+// Graceful Shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received. Closing database pool...');
+  await db.close();
+  console.log('Database pool closed. Exiting...');
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT signal received. Closing database pool...');
+  await db.close();
+  console.log('Database pool closed. Exiting...');
+  process.exit(0);
 });

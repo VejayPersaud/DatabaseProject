@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
@@ -10,23 +10,46 @@ const YouTubeTrendsApp: React.FC = () => {
   const [timeAggregation, setTimeAggregation] = useState<string>('daily');
   const [topVideosPage, setTopVideosPage] = useState<number>(1);
 
-  // Dummy data for trend overview
-  const trendData = [
-    { date: '2023-05-01', avgViews: 150000, avgLikes: 15000, avgDislikes: 500, avgComments: 2000 },
-    { date: '2023-05-02', avgViews: 180000, avgLikes: 18000, avgDislikes: 600, avgComments: 2400 },
-    { date: '2023-05-03', avgViews: 200000, avgLikes: 20000, avgDislikes: 700, avgComments: 2800 },
-    { date: '2023-05-04', avgViews: 160000, avgLikes: 16000, avgDislikes: 550, avgComments: 2200 },
-    { date: '2023-05-05', avgViews: 220000, avgLikes: 22000, avgDislikes: 750, avgComments: 3000 },
-  ];
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [topVideosData, setTopVideosData] = useState<any[]>([]);
 
-  // Dummy data for top videos
-  const topVideosData = [
-    { ytvideoid: 'abc123', title: 'Viral Cat Video', views: 1000000, likes: 100000, dislikes: 2000, comments: 15000 },
-    { ytvideoid: 'def456', title: 'Latest Music Video', views: 800000, likes: 80000, dislikes: 1500, comments: 12000 },
-    { ytvideoid: 'ghi789', title: 'Trending Game Stream', views: 600000, likes: 60000, dislikes: 1000, comments: 9000 },
-    { ytvideoid: 'jkl012', title: 'Cooking Tutorial', views: 400000, likes: 40000, dislikes: 500, comments: 6000 },
-    { ytvideoid: 'mno345', title: 'Tech Review', views: 300000, likes: 30000, dislikes: 300, comments: 4500 },
-  ];
+  // Fetch trend data whenever the time aggregation changes
+  useEffect(() => {
+    const fetchTrends = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/trends?aggregation=${timeAggregation}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch trend data');
+        }
+        const data = await response.json();
+        console.log("Fetched Trend Data:", data); // Debugging line to see the data
+        setTrendData(data);
+      } catch (error) {
+        console.error('Error fetching trend data:', error);
+      }
+    };
+
+    fetchTrends();
+  }, [timeAggregation]);
+
+  // Fetch top videos data whenever the page changes
+  useEffect(() => {
+    const fetchTopVideos = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/top-videos?page=${topVideosPage}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch top videos data');
+        }
+        const data = await response.json();
+        console.log("Top Videos Data:", data); // Debugging line to see the data
+        setTopVideosData(data);
+      } catch (error) {
+        console.error('Error fetching top videos data:', error);
+      }
+    };
+
+    fetchTopVideos();
+  }, [topVideosPage]);
 
   return (
     <div className="p-4">
@@ -62,15 +85,15 @@ const YouTubeTrendsApp: React.FC = () => {
                   </div>
                   <LineChart width={600} height={300} data={trendData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
+                    <XAxis dataKey="PERIOD" /> {/* Updated to match the backend response */}
+                    <YAxis yAxisId="left" /> {/* YAxis for avgViews */}
+                    <YAxis yAxisId="right" orientation="right" /> {/* YAxis for avgLikes, avgDislikes, avgComments */}
                     <Tooltip />
                     <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="avgViews" stroke="#8884d8" name="Avg Views" />
-                    <Line yAxisId="right" type="monotone" dataKey="avgLikes" stroke="#82ca9d" name="Avg Likes" />
-                    <Line yAxisId="right" type="monotone" dataKey="avgDislikes" stroke="#ff7300" name="Avg Dislikes" />
-                    <Line yAxisId="right" type="monotone" dataKey="avgComments" stroke="#ffc658" name="Avg Comments" />
+                    <Line yAxisId="left" type="monotone" dataKey="AVGVIEWS" stroke="#8884d8" name="Avg Views" />
+                    <Line yAxisId="right" type="monotone" dataKey="AVGLIKES" stroke="#82ca9d" name="Avg Likes" />
+                    <Line yAxisId="right" type="monotone" dataKey="AVGDISLIKES" stroke="#ff7300" name="Avg Dislikes" />
+                    <Line yAxisId="right" type="monotone" dataKey="AVGCOMMENTS" stroke="#ffc658" name="Avg Comments" />
                   </LineChart>
                 </CardContent>
               </Card>
@@ -84,11 +107,11 @@ const YouTubeTrendsApp: React.FC = () => {
                 <CardContent>
                   <BarChart width={600} height={300} data={topVideosData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="title" />
+                    <XAxis dataKey="TITLE" /> {/* Ensure this key matches the backend response */}
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="views" fill="#8884d8" />
+                    <Bar dataKey="VIEWS" fill="#8884d8" />
                   </BarChart>
                   <div className="mt-4">
                     <table className="w-full">
@@ -103,14 +126,14 @@ const YouTubeTrendsApp: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {topVideosData.map(video => (
-                          <tr key={video.ytvideoid}>
-                            <td>{video.ytvideoid}</td>
-                            <td>{video.title}</td>
-                            <td>{video.views.toLocaleString()}</td>
-                            <td>{video.likes.toLocaleString()}</td>
-                            <td>{video.dislikes.toLocaleString()}</td>
-                            <td>{video.comments.toLocaleString()}</td>
+                        {topVideosData.map((video) => (
+                          <tr key={video.YTVIDEOID}>
+                            <td>{video.YTVIDEOID}</td>
+                            <td>{video.TITLE}</td>
+                            <td>{video.VIEWS.toLocaleString()}</td>
+                            <td>{video.LIKES.toLocaleString()}</td>
+                            <td>{video.DISLIKES.toLocaleString()}</td>
+                            <td>{video.COMMENTS.toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>
