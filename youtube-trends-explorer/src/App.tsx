@@ -65,6 +65,7 @@ const YouTubeTrendsApp: React.FC = () => {
               <TabsTrigger value="comparison">Video Comparison</TabsTrigger>
             </TabsList>
             
+            {/* Trend Overview Tab */}
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
@@ -85,9 +86,9 @@ const YouTubeTrendsApp: React.FC = () => {
                   </div>
                   <LineChart width={600} height={300} data={trendData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="PERIOD" /> {/* Updated to match the backend response */}
-                    <YAxis yAxisId="left" /> {/* YAxis for avgViews */}
-                    <YAxis yAxisId="right" orientation="right" /> {/* YAxis for avgLikes, avgDislikes, avgComments */}
+                    <XAxis dataKey="PERIOD" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
                     <Tooltip />
                     <Legend />
                     <Line yAxisId="left" type="monotone" dataKey="AVGVIEWS" stroke="#8884d8" name="Avg Views" />
@@ -99,6 +100,7 @@ const YouTubeTrendsApp: React.FC = () => {
               </Card>
             </TabsContent>
             
+            {/* Top Videos Tab */}
             <TabsContent value="top-videos">
               <Card>
                 <CardHeader>
@@ -107,7 +109,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 <CardContent>
                   <BarChart width={600} height={300} data={topVideosData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="TITLE" /> {/* Ensure this key matches the backend response */}
+                    <XAxis dataKey="ytvideoid" /> {/* Updated to use ytvideoid as we don't have titles */}
                     <YAxis />
                     <Tooltip />
                     <Legend />
@@ -118,7 +120,6 @@ const YouTubeTrendsApp: React.FC = () => {
                       <thead>
                         <tr>
                           <th>Video ID</th>
-                          <th>Title</th>
                           <th>Views</th>
                           <th>Likes</th>
                           <th>Dislikes</th>
@@ -129,7 +130,6 @@ const YouTubeTrendsApp: React.FC = () => {
                         {topVideosData.map((video) => (
                           <tr key={video.YTVIDEOID}>
                             <td>{video.YTVIDEOID}</td>
-                            <td>{video.TITLE}</td>
                             <td>{video.VIEWS.toLocaleString()}</td>
                             <td>{video.LIKES.toLocaleString()}</td>
                             <td>{video.DISLIKES.toLocaleString()}</td>
@@ -147,6 +147,7 @@ const YouTubeTrendsApp: React.FC = () => {
               </Card>
             </TabsContent>
             
+            {/* Video Comparison Tab */}
             <TabsContent value="comparison">
               <Card>
                 <CardHeader>
