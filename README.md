@@ -22,7 +22,7 @@ npm install
 
 to install the project specific dependencies, 
 
-3. Create .env file, add your Oracle Database login information in the form
+3. Create .env file and add your Oracle Database login information in the form
 
 DB_USER=
 DB_PASSWORD=
