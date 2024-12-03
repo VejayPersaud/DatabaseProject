@@ -4,14 +4,14 @@ import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Tooltip } from 'recharts';
 
 const YouTubeTrendsApp: React.FC = () => {
   const [timeAggregation, setTimeAggregation] = useState<string>('daily');
   const [topVideosPage, setTopVideosPage] = useState<number>(1);
-
   const [trendData, setTrendData] = useState<any[]>([]);
   const [topVideosData, setTopVideosData] = useState<any[]>([]);
+  const [hoveredData, setHoveredData] = useState<any | null>(null);
 
   // Fetch trend data whenever the time aggregation changes
   useEffect(() => {
@@ -64,7 +64,7 @@ const YouTubeTrendsApp: React.FC = () => {
               <TabsTrigger value="top-videos">Top Videos</TabsTrigger>
               <TabsTrigger value="comparison">Video Comparison</TabsTrigger>
             </TabsList>
-            
+
             {/* Trend Overview Tab */}
             <TabsContent value="overview">
               <Card>
@@ -84,22 +84,86 @@ const YouTubeTrendsApp: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <LineChart width={600} height={300} data={trendData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="PERIOD" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="AVGVIEWS" stroke="#8884d8" name="Avg Views" />
-                    <Line yAxisId="right" type="monotone" dataKey="AVGLIKES" stroke="#82ca9d" name="Avg Likes" />
-                    <Line yAxisId="right" type="monotone" dataKey="AVGDISLIKES" stroke="#ff7300" name="Avg Dislikes" />
-                    <Line yAxisId="right" type="monotone" dataKey="AVGCOMMENTS" stroke="#ffc658" name="Avg Comments" />
-                  </LineChart>
+                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                    <LineChart
+                      width={600}
+                      height={300}
+                      data={trendData}
+                      onMouseMove={(state) => {
+                        if (state && state.activePayload && state.activePayload.length > 0) {
+                          setHoveredData(state.activePayload[0].payload);
+                        } else {
+                          setHoveredData(null);
+                        }
+                      }}
+                      onMouseLeave={() => setHoveredData(null)} // Clear data when leaving the chart
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="PERIOD" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Legend />
+                      <Line
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="AVGVIEWS"
+                        stroke="#8884d8"
+                        name="Avg Views"
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="AVGLIKES"
+                        stroke="#82ca9d"
+                        name="Avg Likes"
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="AVGDISLIKES"
+                        stroke="#ff7300"
+                        name="Avg Dislikes"
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="AVGCOMMENTS"
+                        stroke="#ffc658"
+                        name="Avg Comments"
+                      />
+                      <Tooltip content={<></>} /> {/* Disable default tooltip */}
+                    </LineChart>
+
+                    {/* Custom Data Display */}
+                    <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                      <h3>Hovered Data Details:</h3>
+                      {hoveredData ? (
+                        <ul>
+                          <li>
+                            <strong>Period:</strong> {hoveredData.PERIOD}
+                          </li>
+                          <li>
+                            <strong>Average Views:</strong> {hoveredData.AVGVIEWS.toLocaleString()}
+                          </li>
+                          <li>
+                            <strong>Average Likes:</strong> {hoveredData.AVGLIKES.toLocaleString()}
+                          </li>
+                          <li>
+                            <strong>Average Dislikes:</strong> {hoveredData.AVGDISLIKES.toLocaleString()}
+                          </li>
+                          <li>
+                            <strong>Average Comments:</strong> {hoveredData.AVGCOMMENTS.toLocaleString()}
+                          </li>
+                        </ul>
+                      ) : (
+                        <p>Hover over a point to see details</p>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* Top Videos Tab */}
             <TabsContent value="top-videos">
               <Card>
@@ -107,38 +171,44 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>Top Trending Videos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <BarChart width={600} height={300} data={topVideosData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="ytvideoid" /> {/* Updated to use ytvideoid as we don't have titles */}
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="VIEWS" fill="#8884d8" />
-                  </BarChart>
-                  <div className="mt-4">
-                    <table className="w-full">
-                      <thead>
-                        <tr>
-                          <th>Video ID</th>
-                          <th>Views</th>
-                          <th>Likes</th>
-                          <th>Dislikes</th>
-                          <th>Comments</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {topVideosData.map((video) => (
-                          <tr key={video.YTVIDEOID}>
-                            <td>{video.YTVIDEOID}</td>
-                            <td>{video.VIEWS.toLocaleString()}</td>
-                            <td>{video.LIKES.toLocaleString()}</td>
-                            <td>{video.DISLIKES.toLocaleString()}</td>
-                            <td>{video.COMMENTS.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  {topVideosData.length > 0 ? (
+                    <>
+                      <BarChart width={600} height={300} data={topVideosData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="YTVIDEOID" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="VIEWS" fill="#8884d8" />
+                      </BarChart>
+                      <div className="mt-4">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th>Video ID</th>
+                              <th>Views</th>
+                              <th>Likes</th>
+                              <th>Dislikes</th>
+                              <th>Comments</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {topVideosData.map((video) => (
+                              <tr key={video.YTVIDEOID}>
+                                <td>{video.YTVIDEOID}</td>
+                                <td>{video.VIEWS.toLocaleString()}</td>
+                                <td>{video.LIKES.toLocaleString()}</td>
+                                <td>{video.DISLIKES.toLocaleString()}</td>
+                                <td>{video.COMMENTS.toLocaleString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    <p>No data available for top videos.</p>
+                  )}
                   <div className="mt-4 flex justify-between">
                     <Button onClick={() => setTopVideosPage((prev) => Math.max(1, prev - 1))}>Previous</Button>
                     <Button onClick={() => setTopVideosPage((prev) => prev + 1)}>Next</Button>
@@ -146,7 +216,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* Video Comparison Tab */}
             <TabsContent value="comparison">
               <Card>
