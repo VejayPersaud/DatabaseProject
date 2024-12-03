@@ -4,7 +4,13 @@ import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Tooltip } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts'; // Import Tooltip
+
+// Custom Bar component to eliminate hover overlay effect
+const CustomBar = (props: any) => {
+  const { fill, x, y, width, height } = props;
+  return <rect x={x} y={y} width={width} height={height} fill={fill} />;
+};
 
 const YouTubeTrendsApp: React.FC = () => {
   const [timeAggregation, setTimeAggregation] = useState<string>('daily');
@@ -12,6 +18,7 @@ const YouTubeTrendsApp: React.FC = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [topVideosData, setTopVideosData] = useState<any[]>([]);
   const [hoveredData, setHoveredData] = useState<any | null>(null);
+  const [hoveredTopVideoData, setHoveredTopVideoData] = useState<any | null>(null);
 
   // Fetch trend data whenever the time aggregation changes
   useEffect(() => {
@@ -131,7 +138,6 @@ const YouTubeTrendsApp: React.FC = () => {
                         stroke="#ffc658"
                         name="Avg Comments"
                       />
-                      <Tooltip content={<></>} /> {/* Disable default tooltip */}
                     </LineChart>
 
                     {/* Custom Data Display */}
@@ -172,40 +178,58 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   {topVideosData.length > 0 ? (
-                    <>
-                      <BarChart width={600} height={300} data={topVideosData}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <BarChart
+                        width={600}
+                        height={300}
+                        data={topVideosData}
+                        onMouseMove={(state) => {
+                          if (state && state.activePayload && state.activePayload.length > 0) {
+                            setHoveredTopVideoData(state.activePayload[0].payload);
+                          } else {
+                            setHoveredTopVideoData(null);
+                          }
+                        }}
+                        onMouseLeave={() => setHoveredTopVideoData(null)}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="YTVIDEOID" />
                         <YAxis />
-                        <Tooltip />
                         <Legend />
-                        <Bar dataKey="VIEWS" fill="#8884d8" />
+                        <Bar
+                          dataKey="VIEWS"
+                          fill="#8884d8"
+                          isAnimationActive={false}
+                          shape={<CustomBar fill="#8884d8" />} // Using a custom bar component
+                        />
                       </BarChart>
-                      <div className="mt-4">
-                        <table className="w-full">
-                          <thead>
-                            <tr>
-                              <th>Video ID</th>
-                              <th>Views</th>
-                              <th>Likes</th>
-                              <th>Dislikes</th>
-                              <th>Comments</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {topVideosData.map((video) => (
-                              <tr key={video.YTVIDEOID}>
-                                <td>{video.YTVIDEOID}</td>
-                                <td>{video.VIEWS.toLocaleString()}</td>
-                                <td>{video.LIKES.toLocaleString()}</td>
-                                <td>{video.DISLIKES.toLocaleString()}</td>
-                                <td>{video.COMMENTS.toLocaleString()}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+
+                      {/* Custom Data Display for Top Videos */}
+                      <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                        <h3>Hovered Video Details:</h3>
+                        {hoveredTopVideoData ? (
+                          <ul>
+                            <li>
+                              <strong>Video ID:</strong> {hoveredTopVideoData.YTVIDEOID}
+                            </li>
+                            <li>
+                              <strong>Views:</strong> {hoveredTopVideoData.VIEWS.toLocaleString()}
+                            </li>
+                            <li>
+                              <strong>Likes:</strong> {hoveredTopVideoData.LIKES.toLocaleString()}
+                            </li>
+                            <li>
+                              <strong>Dislikes:</strong> {hoveredTopVideoData.DISLIKES.toLocaleString()}
+                            </li>
+                            <li>
+                              <strong>Comments:</strong> {hoveredTopVideoData.COMMENTS.toLocaleString()}
+                            </li>
+                          </ul>
+                        ) : (
+                          <p>Hover over a bar to see details</p>
+                        )}
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <p>No data available for top videos.</p>
                   )}
