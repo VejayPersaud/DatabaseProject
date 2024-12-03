@@ -12,7 +12,9 @@ Make sure you have the following installed:
 
 ### Setup Instructions
 
-1. Clone the repository and then cd into the yt-trends-explorers directory. This project assumes you have the tools node and npm installed.
+```bash
+
+1. Clone the repository and then cd into the yt-trends-explorers directory.
 
 2. Run the command 
 
