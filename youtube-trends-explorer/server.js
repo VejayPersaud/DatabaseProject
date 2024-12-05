@@ -59,7 +59,7 @@ app.get('/trends', async (req, res) => {
            AVG(likes) AS AVGLIKES,
            AVG(dislikes) AS AVGDISLIKES,
            AVG(comments) AS AVGCOMMENTS
-    FROM PerformanceMetrics
+    FROM "VPERSAUD1".PerformanceMetrics
     ${videoCondition}
     GROUP BY ${aggregationFormat}
     ORDER BY ${aggregationFormat}
@@ -92,7 +92,7 @@ app.get('/top-videos', async (req, res) => {
     FROM (
       SELECT ytvideoid, views, likes, dislikes, comments,
              ROW_NUMBER() OVER (PARTITION BY ytvideoid ORDER BY timestamp DESC) AS rn
-      FROM PerformanceMetrics
+      FROM "VPERSAUD1".PerformanceMetrics
     ) 
     WHERE rn = 1
     GROUP BY ytvideoid
@@ -132,7 +132,7 @@ app.get('/compare-videos', async (req, res) => {
            likes,
            dislikes,
            comments
-    FROM PerformanceMetrics
+    FROM "VPERSAUD1".PerformanceMetrics
     WHERE ytvideoid IN (${videoIdsArray.map((_, i) => `:${i}`).join(', ')})
     ORDER BY timestamp
   `;
