@@ -5,6 +5,7 @@ import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { hover } from '@testing-library/user-event/dist/hover';
 
 const YouTubeTrendsApp: React.FC = () => {
   const [timeAggregation, setTimeAggregation] = useState<string>('daily');
@@ -106,11 +107,12 @@ const YouTubeTrendsApp: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: "50px"}}>
                     <LineChart
-                      width={600}
-                      height={300}
+                      width={1000}
+                      height={500}
                       data={trendData}
+                      margin={{left: 20}}
                       onMouseMove={(state) => {
                         if (state && state.activePayload && state.activePayload.length > 0) {
                           setHoveredData(state.activePayload[0].payload);
@@ -156,12 +158,14 @@ const YouTubeTrendsApp: React.FC = () => {
                     </LineChart>
 
                     {/* Custom Data Display */}
-                    <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                    <div style={{ marginLeft: '20px', maxWidth: '400px' }}>
                       <h3>Hovered Data Details:</h3>
                       {hoveredData ? (
                         <ul>
                           <li>
-                            <strong>Period:</strong> {hoveredData.PERIOD}
+                              <strong>Period:</strong> {new Date(hoveredData.PERIOD).toLocaleString("en-US", {
+                                    year: "numeric", month: "long", day: "numeric",
+                                    hour: "2-digit", minute: "2-digit", second: "2-digit"})}
                           </li>
                           <li>
                             <strong>Average Views:</strong> {hoveredData.AVGVIEWS?.toLocaleString() ?? 'N/A'}
