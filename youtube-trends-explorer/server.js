@@ -116,6 +116,29 @@ app.get('/top-videos', async (req, res) => {
   }
 });
 
+// Route for top growth videos
+app.get('/top-growth', async (req, res) => {
+  const query = `
+    SELECT ytvideoid, 
+           (MAX(views) - MIN(views)) AS GROWTH
+    FROM "VPERSAUD1".PerformanceMetrics
+    GROUP BY ytvideoid
+    ORDER BY GROWTH DESC
+    FETCH FIRST 10 ROWS ONLY
+  `;
+
+  try {
+    const result = await db.simpleExecute(query, []);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching top growth data:', error);
+    res.status(500).json({
+      error: 'Failed to fetch top growth data',
+      details: error.message,
+    });
+  }
+});
+
 // Route for video comparison data (optional for now, not fully implemented)
 app.get('/compare-videos', async (req, res) => {
   const { ytvideoids } = req.query;

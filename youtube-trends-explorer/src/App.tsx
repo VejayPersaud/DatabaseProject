@@ -11,7 +11,10 @@ const YouTubeTrendsApp: React.FC = () => {
   const [topVideosPage, setTopVideosPage] = useState<number>(1);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [topVideosData, setTopVideosData] = useState<any[]>([]);
-  const [hoveredData, setHoveredData] = useState<any | null>(null);
+  const [topGrowthData, setTopGrowthData] = useState<any[]>([]);
+  const [hoveredTrendData, setHoveredTrendData] = useState<any | null>(null);
+  const [hoveredTopVideosData, setHoveredTopVideosData] = useState<any | null>(null);
+  const [hoveredTopGrowthData, setHoveredTopGrowthData] = useState<any | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [topTenVideos, setTopTenVideos] = useState<any[]>([]);
 
@@ -73,6 +76,24 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTopTenVideos();
   }, []);
 
+  // Fetch the top growth data
+  useEffect(() => {
+    const fetchTopGrowth = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/top-growth');
+        if (!response.ok) {
+          throw new Error('Failed to fetch top growth data');
+        }
+        const data = await response.json();
+        setTopGrowthData(data);
+      } catch (error) {
+        console.error('Error fetching top growth data:', error);
+      }
+    };
+
+    fetchTopGrowth();
+  }, []);
+
   return (
     <div className="p-4">
       <Card className="mb-4">
@@ -84,6 +105,7 @@ const YouTubeTrendsApp: React.FC = () => {
             <TabsList>
               <TabsTrigger value="overview">Trend Overview</TabsTrigger>
               <TabsTrigger value="top-videos">Top Videos</TabsTrigger>
+              <TabsTrigger value="top-growth">Top Growth</TabsTrigger>
               <TabsTrigger value="comparison">Video Comparison</TabsTrigger>
             </TabsList>
 
@@ -113,12 +135,12 @@ const YouTubeTrendsApp: React.FC = () => {
                       data={trendData}
                       onMouseMove={(state) => {
                         if (state && state.activePayload && state.activePayload.length > 0) {
-                          setHoveredData(state.activePayload[0].payload);
+                          setHoveredTrendData(state.activePayload[0].payload);
                         } else {
-                          setHoveredData(null);
+                          setHoveredTrendData(null);
                         }
                       }}
-                      onMouseLeave={() => setHoveredData(null)} // Clear data when leaving the chart
+                      onMouseLeave={() => setHoveredTrendData(null)} // Clear data when leaving the chart
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="PERIOD" />
@@ -158,22 +180,22 @@ const YouTubeTrendsApp: React.FC = () => {
                     {/* Custom Data Display */}
                     <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
                       <h3>Hovered Data Details:</h3>
-                      {hoveredData ? (
+                      {hoveredTrendData ? (
                         <ul>
                           <li>
-                            <strong>Period:</strong> {hoveredData.PERIOD}
+                            <strong>Period:</strong> {hoveredTrendData.PERIOD}
                           </li>
                           <li>
-                            <strong>Average Views:</strong> {hoveredData.AVGVIEWS?.toLocaleString() ?? 'N/A'}
+                            <strong>Average Views:</strong> {hoveredTrendData.AVGVIEWS?.toLocaleString() ?? 'N/A'}
                           </li>
                           <li>
-                            <strong>Average Likes:</strong> {hoveredData.AVGLIKES?.toLocaleString() ?? 'N/A'}
+                            <strong>Average Likes:</strong> {hoveredTrendData.AVGLIKES?.toLocaleString() ?? 'N/A'}
                           </li>
                           <li>
-                            <strong>Average Dislikes:</strong> {hoveredData.AVGDISLIKES?.toLocaleString() ?? 'N/A'}
+                            <strong>Average Dislikes:</strong> {hoveredTrendData.AVGDISLIKES?.toLocaleString() ?? 'N/A'}
                           </li>
                           <li>
-                            <strong>Average Comments:</strong> {hoveredData.AVGCOMMENTS?.toLocaleString() ?? 'N/A'}
+                            <strong>Average Comments:</strong> {hoveredTrendData.AVGCOMMENTS?.toLocaleString() ?? 'N/A'}
                           </li>
                         </ul>
                       ) : (
@@ -198,12 +220,12 @@ const YouTubeTrendsApp: React.FC = () => {
                     data={topVideosData}
                     onMouseMove={(state) => {
                       if (state && state.activePayload && state.activePayload.length > 0) {
-                        setHoveredData(state.activePayload[0].payload);
+                        setHoveredTopVideosData(state.activePayload[0].payload);
                       } else {
-                        setHoveredData(null);
+                        setHoveredTopVideosData(null);
                       }
                     }}
-                    onMouseLeave={() => setHoveredData(null)}
+                    onMouseLeave={() => setHoveredTopVideosData(null)}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="ytvideoid" />
@@ -215,22 +237,22 @@ const YouTubeTrendsApp: React.FC = () => {
                   {/* Custom Data Display for Top Videos */}
                   <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
                     <h3>Hovered Video Data:</h3>
-                    {hoveredData ? (
+                    {hoveredTopVideosData ? (
                       <ul>
                         <li>
-                          <strong>Video ID:</strong> {hoveredData.YTVIDEOID}
+                          <strong>Video ID:</strong> {hoveredTopVideosData.YTVIDEOID}
                         </li>
                         <li>
-                          <strong>Views:</strong> {hoveredData.VIEWS?.toLocaleString() ?? 'N/A'}
+                          <strong>Views:</strong> {hoveredTopVideosData.VIEWS?.toLocaleString() ?? 'N/A'}
                         </li>
                         <li>
-                          <strong>Likes:</strong> {hoveredData.LIKES?.toLocaleString() ?? 'N/A'}
+                          <strong>Likes:</strong> {hoveredTopVideosData.LIKES?.toLocaleString() ?? 'N/A'}
                         </li>
                         <li>
-                          <strong>Dislikes:</strong> {hoveredData.DISLIKES?.toLocaleString() ?? 'N/A'}
+                          <strong>Dislikes:</strong> {hoveredTopVideosData.DISLIKES?.toLocaleString() ?? 'N/A'}
                         </li>
                         <li>
-                          <strong>Comments:</strong> {hoveredData.COMMENTS?.toLocaleString() ?? 'N/A'}
+                          <strong>Comments:</strong> {hoveredTopVideosData.COMMENTS?.toLocaleString() ?? 'N/A'}
                         </li>
                       </ul>
                     ) : (
@@ -242,6 +264,53 @@ const YouTubeTrendsApp: React.FC = () => {
                   <div className="mt-4 flex justify-between">
                     <Button onClick={() => setTopVideosPage((prev) => Math.max(1, prev - 1))}>Previous</Button>
                     <Button onClick={() => setTopVideosPage((prev) => prev + 1)}>Next</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Top Growth Tab */}
+            <TabsContent value="top-growth">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Growth Videos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BarChart
+                    width={600}
+                    height={300}
+                    data={topGrowthData}
+                    onMouseMove={(state) => {
+                      if (state && state.activePayload && state.activePayload.length > 0) {
+                        setHoveredTopGrowthData(state.activePayload[0].payload);
+                      } else {
+                        setHoveredTopGrowthData(null);
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredTopGrowthData(null)}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="YTVIDEOID" />
+                    <YAxis />
+                    <Legend />
+                    <Bar dataKey="GROWTH" fill="#82ca9d" />
+                  </BarChart>
+
+                  {/* Custom Data Display for Top Growth */}
+                  <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                    <h3>Hovered Growth Data:</h3>
+                    {hoveredTopGrowthData ? (
+                      <ul>
+                        <li>
+                          <strong>Video ID:</strong> {hoveredTopGrowthData.YTVIDEOID}
+                        </li>
+                        <li>
+                          <strong>Growth:</strong> {hoveredTopGrowthData.GROWTH?.toLocaleString() ?? 'N/A'}
+                        </li>
+                      </ul>
+                    ) : (
+                      <p>Hover over a bar to see details</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
