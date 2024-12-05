@@ -91,10 +91,7 @@ const YouTubeTrendsApp: React.FC = () => {
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
-                  {/* Update title to show only the overall trends unless a specific video is selected */}
-                  <CardTitle>
-                    {selectedVideoId ? `Trends for Video ID: ${selectedVideoId}` : "Overall Trends"}
-                  </CardTitle>
+                  <CardTitle>{selectedVideoId ? `Trends for Video ID: ${selectedVideoId}` : "Overall Trends"}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
