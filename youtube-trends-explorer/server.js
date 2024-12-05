@@ -1,17 +1,18 @@
 const express = require('express');
-const db = require('./db');  // Import the db module
 const cors = require('cors');
+const db = require('./db'); // Import the database connection functions
 
 const app = express();
-const PORT = 5000;  // Port number where the backend server will run
+const PORT = 5000;
 
-// Middleware to handle CORS
+// Middleware
 app.use(cors());
+app.use(express.json());
 
 // Function to start the app and initialize the database
 async function startApp() {
   try {
-    await db.initialize();  // Initialize database connection
+    await db.initialize(); // Initialize database connection pool
     console.log('Database connection pool initialized');
 
     // Start the server only after the database is connected
@@ -20,106 +21,131 @@ async function startApp() {
     });
   } catch (err) {
     console.error('Error starting application', err);
-    process.exit(1);  // Exit if there’s a connection issue
+    process.exit(1); // Exit if there's a connection issue
   }
 }
 
-startApp();  // Call this function to start the app
+startApp();
 
-// Route to fetch trend data
+// Route to fetch general trends data or specific video trends data
 app.get('/trends', async (req, res) => {
-  const aggregation = req.query.aggregation;
+  const { aggregation, ytvideoid } = req.query;
 
-  let query = '';
-  if (aggregation === 'daily') {
-    query = `SELECT TO_CHAR(timestamp, 'YYYY-MM-DD') AS PERIOD, 
-                    AVG(views) AS AVGVIEWS, 
-                    AVG(likes) AS AVGLIKES, 
-                    AVG(dislikes) AS AVGDISLIKES, 
-                    AVG(comments) AS AVGCOMMENTS 
-             FROM PerformanceMetrics 
-             GROUP BY TO_CHAR(timestamp, 'YYYY-MM-DD')
-             ORDER BY TO_CHAR(timestamp, 'YYYY-MM-DD')`;
-  } else if (aggregation === 'weekly') {
-    query = `SELECT TO_CHAR(TRUNC(timestamp, 'IW'), 'YYYY-IW') AS PERIOD, 
-                    AVG(views) AS AVGVIEWS, 
-                    AVG(likes) AS AVGLIKES, 
-                    AVG(dislikes) AS AVGDISLIKES, 
-                    AVG(comments) AS AVGCOMMENTS 
-             FROM PerformanceMetrics 
-             GROUP BY TO_CHAR(TRUNC(timestamp, 'IW'), 'YYYY-IW')
-             ORDER BY TO_CHAR(TRUNC(timestamp, 'IW'), 'YYYY-IW')`;
-  } else if (aggregation === 'monthly') {
-    query = `SELECT TO_CHAR(timestamp, 'YYYY-MM') AS PERIOD, 
-                    AVG(views) AS AVGVIEWS, 
-                    AVG(likes) AS AVGLIKES, 
-                    AVG(dislikes) AS AVGDISLIKES, 
-                    AVG(comments) AS AVGCOMMENTS 
-             FROM PerformanceMetrics 
-             GROUP BY TO_CHAR(timestamp, 'YYYY-MM')
-             ORDER BY TO_CHAR(timestamp, 'YYYY-MM')`;
+  // Validate time aggregation parameter
+  if (!['daily', 'weekly', 'monthly'].includes(aggregation)) {
+    return res.status(400).json({ error: 'Invalid time aggregation' });
   }
 
-  try {
-    const result = await db.simpleExecute(query);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching trend data:', error);
-    res.status(500).json({ error: 'Failed to fetch trend data', details: error.message });
+  // Build query dynamically based on aggregation type
+  let aggregationFormat;
+  switch (aggregation) {
+    case 'daily':
+      aggregationFormat = `TRUNC(timestamp, 'DD')`;
+      break;
+    case 'weekly':
+      aggregationFormat = `TRUNC(timestamp, 'IW')`;
+      break;
+    case 'monthly':
+      aggregationFormat = `TRUNC(timestamp, 'MM')`;
+      break;
   }
-});
 
-// Revised Route to fetch top videos data without nested aggregate function
-app.get('/top-videos', async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const pageSize = 10;  // Number of records per page
-  const offset = (page - 1) * pageSize;
+  // If a specific video ID is provided, filter by that video ID
+  const videoCondition = ytvideoid ? `WHERE ytvideoid = :ytvideoid` : '';
 
-  // Use a subquery to simplify aggregation and ordering
   const query = `
-    SELECT ytvideoid, views, likes, dislikes, comments
-    FROM (
-      SELECT ytvideoid, 
-             SUM(views) AS views, 
-             SUM(likes) AS likes, 
-             SUM(dislikes) AS dislikes, 
-             SUM(comments) AS comments,
-             RANK() OVER (ORDER BY SUM(views) DESC) AS rank
-      FROM PerformanceMetrics
-      GROUP BY ytvideoid
-    ) WHERE rank BETWEEN :offset + 1 AND :offset + :pageSize
+    SELECT ${aggregationFormat} AS PERIOD,
+           AVG(views) AS AVGVIEWS,
+           AVG(likes) AS AVGLIKES,
+           AVG(dislikes) AS AVGDISLIKES,
+           AVG(comments) AS AVGCOMMENTS
+    FROM PerformanceMetrics
+    ${videoCondition}
+    GROUP BY ${aggregationFormat}
+    ORDER BY ${aggregationFormat}
   `;
 
   try {
-    const result = await db.simpleExecute(query, { offset, pageSize });
+    const binds = ytvideoid ? [ytvideoid] : [];
+    const result = await db.simpleExecute(query, binds);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching trend data:', error);
+    res.status(500).json({
+      error: 'Failed to fetch trend data',
+      details: error.message,
+    });
+  }
+});
+
+// Route to fetch top videos data
+app.get('/top-videos', async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const offset = (page - 1) * limit;
+
+  const query = `
+    SELECT ytvideoid,
+           MAX(views) AS VIEWS,
+           MAX(likes) AS LIKES,
+           MAX(dislikes) AS DISLIKES,
+           MAX(comments) AS COMMENTS
+    FROM (
+      SELECT ytvideoid, views, likes, dislikes, comments,
+             ROW_NUMBER() OVER (PARTITION BY ytvideoid ORDER BY timestamp DESC) AS rn
+      FROM PerformanceMetrics
+    ) 
+    WHERE rn = 1
+    GROUP BY ytvideoid
+    ORDER BY VIEWS DESC
+    OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
+  `;
+
+  try {
+    const binds = {
+      offset: parseInt(offset, 10),
+      limit: parseInt(limit, 10),
+    };
+    const result = await db.simpleExecute(query, binds);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching top videos data:', error);
-    res.status(500).json({ error: 'Failed to fetch top videos data', details: error.message });
+    res.status(500).json({
+      error: 'Failed to fetch top videos data',
+      details: error.message,
+    });
   }
 });
 
-// Route to fetch data from Video table for debugging
-app.get('/check-video-table', async (req, res) => {
-  const query = `SELECT * FROM Video FETCH FIRST 10 ROWS ONLY`;
+// Route for video comparison data (optional for now, not fully implemented)
+app.get('/compare-videos', async (req, res) => {
+  const { ytvideoids } = req.query;
+  if (!ytvideoids) {
+    return res.status(400).json({ error: 'You must provide video IDs for comparison' });
+  }
+
+  const videoIdsArray = ytvideoids.split(',');
+
+  const query = `
+    SELECT ytvideoid,
+           timestamp,
+           views,
+           likes,
+           dislikes,
+           comments
+    FROM PerformanceMetrics
+    WHERE ytvideoid IN (${videoIdsArray.map((_, i) => `:${i}`).join(', ')})
+    ORDER BY timestamp
+  `;
 
   try {
-    const result = await db.simpleExecute(query);
+    const binds = videoIdsArray;
+    const result = await db.simpleExecute(query, binds);
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching video table data:', error);
-    res.status(500).json({ error: 'Failed to fetch video table data', details: error.message });
-  }
-});
-
-// Close the database connection pool when the application ends
-process.on('SIGINT', async () => {
-  try {
-    await db.close();
-    console.log('Database connection pool closed');
-    process.exit(0);
-  } catch (err) {
-    console.error('Error closing database pool', err);
-    process.exit(1);
+    console.error('Error fetching comparison data:', error);
+    res.status(500).json({
+      error: 'Failed to fetch comparison data',
+      details: error.message,
+    });
   }
 });
