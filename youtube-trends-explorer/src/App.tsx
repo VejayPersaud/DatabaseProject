@@ -4,13 +4,7 @@ import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts'; // Import Tooltip
-
-// Custom Bar component to eliminate hover overlay effect
-const CustomBar = (props: any) => {
-  const { fill, x, y, width, height } = props;
-  return <rect x={x} y={y} width={width} height={height} fill={fill} />;
-};
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 const YouTubeTrendsApp: React.FC = () => {
   const [timeAggregation, setTimeAggregation] = useState<string>('daily');
@@ -18,18 +12,22 @@ const YouTubeTrendsApp: React.FC = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [topVideosData, setTopVideosData] = useState<any[]>([]);
   const [hoveredData, setHoveredData] = useState<any | null>(null);
-  const [hoveredTopVideoData, setHoveredTopVideoData] = useState<any | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [topTenVideos, setTopTenVideos] = useState<any[]>([]);
 
-  // Fetch trend data whenever the time aggregation changes
+  // Fetch general trend data or specific video trends
   useEffect(() => {
     const fetchTrends = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/trends?aggregation=${timeAggregation}`);
+        let url = `http://localhost:5000/trends?aggregation=${timeAggregation}`;
+        if (selectedVideoId) {
+          url += `&ytvideoid=${selectedVideoId}`;
+        }
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error('Failed to fetch trend data');
         }
         const data = await response.json();
-        console.log("Fetched Trend Data:", data); // Debugging line to see the data
         setTrendData(data);
       } catch (error) {
         console.error('Error fetching trend data:', error);
@@ -37,7 +35,7 @@ const YouTubeTrendsApp: React.FC = () => {
     };
 
     fetchTrends();
-  }, [timeAggregation]);
+  }, [timeAggregation, selectedVideoId]);
 
   // Fetch top videos data whenever the page changes
   useEffect(() => {
@@ -48,7 +46,6 @@ const YouTubeTrendsApp: React.FC = () => {
           throw new Error('Failed to fetch top videos data');
         }
         const data = await response.json();
-        console.log("Top Videos Data:", data); // Debugging line to see the data
         setTopVideosData(data);
       } catch (error) {
         console.error('Error fetching top videos data:', error);
@@ -57,6 +54,24 @@ const YouTubeTrendsApp: React.FC = () => {
 
     fetchTopVideos();
   }, [topVideosPage]);
+
+  // Fetch the Top 10 Videos (for the Overall Trends section)
+  useEffect(() => {
+    const fetchTopTenVideos = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/top-videos?limit=10`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch top ten videos data');
+        }
+        const data = await response.json();
+        setTopTenVideos(data);
+      } catch (error) {
+        console.error('Error fetching top ten videos data:', error);
+      }
+    };
+
+    fetchTopTenVideos();
+  }, []);
 
   return (
     <div className="p-4">
@@ -76,7 +91,10 @@ const YouTubeTrendsApp: React.FC = () => {
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
-                  <CardTitle>Overall Trends</CardTitle>
+                  {/* Update title to show only the overall trends unless a specific video is selected */}
+                  <CardTitle>
+                    {selectedVideoId ? `Trends for Video ID: ${selectedVideoId}` : "Overall Trends"}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
@@ -149,16 +167,16 @@ const YouTubeTrendsApp: React.FC = () => {
                             <strong>Period:</strong> {hoveredData.PERIOD}
                           </li>
                           <li>
-                            <strong>Average Views:</strong> {hoveredData.AVGVIEWS.toLocaleString()}
+                            <strong>Average Views:</strong> {hoveredData.AVGVIEWS?.toLocaleString() ?? 'N/A'}
                           </li>
                           <li>
-                            <strong>Average Likes:</strong> {hoveredData.AVGLIKES.toLocaleString()}
+                            <strong>Average Likes:</strong> {hoveredData.AVGLIKES?.toLocaleString() ?? 'N/A'}
                           </li>
                           <li>
-                            <strong>Average Dislikes:</strong> {hoveredData.AVGDISLIKES.toLocaleString()}
+                            <strong>Average Dislikes:</strong> {hoveredData.AVGDISLIKES?.toLocaleString() ?? 'N/A'}
                           </li>
                           <li>
-                            <strong>Average Comments:</strong> {hoveredData.AVGCOMMENTS.toLocaleString()}
+                            <strong>Average Comments:</strong> {hoveredData.AVGCOMMENTS?.toLocaleString() ?? 'N/A'}
                           </li>
                         </ul>
                       ) : (
@@ -177,62 +195,53 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>Top Trending Videos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {topVideosData.length > 0 ? (
-                    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                      <BarChart
-                        width={600}
-                        height={300}
-                        data={topVideosData}
-                        onMouseMove={(state) => {
-                          if (state && state.activePayload && state.activePayload.length > 0) {
-                            setHoveredTopVideoData(state.activePayload[0].payload);
-                          } else {
-                            setHoveredTopVideoData(null);
-                          }
-                        }}
-                        onMouseLeave={() => setHoveredTopVideoData(null)}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="YTVIDEOID" />
-                        <YAxis />
-                        <Legend />
-                        <Bar
-                          dataKey="VIEWS"
-                          fill="#8884d8"
-                          isAnimationActive={false}
-                          shape={<CustomBar fill="#8884d8" />} // Using a custom bar component
-                        />
-                      </BarChart>
+                  <BarChart
+                    width={600}
+                    height={300}
+                    data={topVideosData}
+                    onMouseMove={(state) => {
+                      if (state && state.activePayload && state.activePayload.length > 0) {
+                        setHoveredData(state.activePayload[0].payload);
+                      } else {
+                        setHoveredData(null);
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredData(null)}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="ytvideoid" />
+                    <YAxis />
+                    <Legend />
+                    <Bar dataKey="VIEWS" fill="#8884d8" />
+                  </BarChart>
 
-                      {/* Custom Data Display for Top Videos */}
-                      <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
-                        <h3>Hovered Video Details:</h3>
-                        {hoveredTopVideoData ? (
-                          <ul>
-                            <li>
-                              <strong>Video ID:</strong> {hoveredTopVideoData.YTVIDEOID}
-                            </li>
-                            <li>
-                              <strong>Views:</strong> {hoveredTopVideoData.VIEWS.toLocaleString()}
-                            </li>
-                            <li>
-                              <strong>Likes:</strong> {hoveredTopVideoData.LIKES.toLocaleString()}
-                            </li>
-                            <li>
-                              <strong>Dislikes:</strong> {hoveredTopVideoData.DISLIKES.toLocaleString()}
-                            </li>
-                            <li>
-                              <strong>Comments:</strong> {hoveredTopVideoData.COMMENTS.toLocaleString()}
-                            </li>
-                          </ul>
-                        ) : (
-                          <p>Hover over a bar to see details</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p>No data available for top videos.</p>
-                  )}
+                  {/* Custom Data Display for Top Videos */}
+                  <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                    <h3>Hovered Video Data:</h3>
+                    {hoveredData ? (
+                      <ul>
+                        <li>
+                          <strong>Video ID:</strong> {hoveredData.YTVIDEOID}
+                        </li>
+                        <li>
+                          <strong>Views:</strong> {hoveredData.VIEWS?.toLocaleString() ?? 'N/A'}
+                        </li>
+                        <li>
+                          <strong>Likes:</strong> {hoveredData.LIKES?.toLocaleString() ?? 'N/A'}
+                        </li>
+                        <li>
+                          <strong>Dislikes:</strong> {hoveredData.DISLIKES?.toLocaleString() ?? 'N/A'}
+                        </li>
+                        <li>
+                          <strong>Comments:</strong> {hoveredData.COMMENTS?.toLocaleString() ?? 'N/A'}
+                        </li>
+                      </ul>
+                    ) : (
+                      <p>Hover over a bar to see details</p>
+                    )}
+                  </div>
+
+                  {/* Pagination Buttons */}
                   <div className="mt-4 flex justify-between">
                     <Button onClick={() => setTopVideosPage((prev) => Math.max(1, prev - 1))}>Previous</Button>
                     <Button onClick={() => setTopVideosPage((prev) => prev + 1)}>Next</Button>
