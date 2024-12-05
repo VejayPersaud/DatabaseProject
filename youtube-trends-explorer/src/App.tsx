@@ -274,6 +274,10 @@ const YouTubeTrendsApp: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Top Growth Videos</CardTitle>
+                  <p style={{ fontSize: '0.9rem', color: 'gray' }}>
+                    Growth is measured by the increase in views over a specified time period. It represents the net
+                    change in views, not a percentage.
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <BarChart
@@ -305,7 +309,7 @@ const YouTubeTrendsApp: React.FC = () => {
                           <strong>Video ID:</strong> {hoveredTopGrowthData.YTVIDEOID}
                         </li>
                         <li>
-                          <strong>Growth:</strong> {hoveredTopGrowthData.GROWTH?.toLocaleString() ?? 'N/A'}
+                          <strong>Growth in Views:</strong> {hoveredTopGrowthData.GROWTH?.toLocaleString() ?? 'N/A'}
                         </li>
                       </ul>
                     ) : (
