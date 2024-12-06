@@ -150,11 +150,12 @@ const YouTubeTrendsApp: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: "50px" }}>
                     <LineChart
-                      width={600}
-                      height={300}
+                      width={1000}
+                      height={390}
                       data={trendData}
+                      margin={{ left: 20 }}
                       onMouseMove={(state) => {
                         if (state && state.activePayload && state.activePayload.length > 0) {
                           setHoveredTrendData(state.activePayload[0].payload);
@@ -176,12 +177,19 @@ const YouTubeTrendsApp: React.FC = () => {
                     </LineChart>
 
                     {/* Custom Data Display */}
-                    <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                    <div style={{ marginLeft: '20px', maxWidth: '400px' }}>
                       <h3>Hovered Data Details:</h3>
                       {hoveredTrendData ? (
                         <ul>
                           <li>
-                            <strong>Period:</strong> {hoveredTrendData.PERIOD}
+                            <strong>Period:</strong> {hoveredTrendData.PERIOD ? new Date(hoveredTrendData.PERIOD).toLocaleString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit"
+                            }) : 'N/A'}
                           </li>
                           <li>
                             <strong>Average Views:</strong> {hoveredTrendData.AVGVIEWS?.toLocaleString() ?? 'N/A'}
