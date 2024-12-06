@@ -17,6 +17,7 @@ const YouTubeTrendsApp: React.FC = () => {
   const [hoveredTopGrowthData, setHoveredTopGrowthData] = useState<any | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]); // Array to store selected video IDs
+  const [topMetric, setTopMetric] = useState<string>('VIEWS'); // Metric for top videos chart
 
   // Fetch general trend data or specific video trends
   useEffect(() => {
@@ -40,7 +41,7 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTrends();
   }, [timeAggregation, selectedVideoId]);
 
-  // Fetch top videos data whenever the page changes
+  // Fetch top videos data whenever the page or metric changes
   useEffect(() => {
     const fetchTopVideos = async () => {
       try {
@@ -49,14 +50,16 @@ const YouTubeTrendsApp: React.FC = () => {
           throw new Error('Failed to fetch top videos data');
         }
         const data = await response.json();
-        setTopVideosData(data);
+        // Sort data based on the selected metric in descending order
+        const sortedData = data.sort((a: any, b: any) => b[topMetric] - a[topMetric]);
+        setTopVideosData(sortedData);
       } catch (error) {
         console.error('Error fetching top videos data:', error);
       }
     };
 
     fetchTopVideos();
-  }, [topVideosPage]);
+  }, [topVideosPage, topMetric]);
 
   // Fetch the Top Growth data
   useEffect(() => {
@@ -128,7 +131,6 @@ const YouTubeTrendsApp: React.FC = () => {
               <TabsTrigger value="overview">Trend Overview</TabsTrigger>
               <TabsTrigger value="top-videos">Top Videos</TabsTrigger>
               <TabsTrigger value="top-growth">Top Growth</TabsTrigger>
-              <TabsTrigger value="comparison">Video Comparison</TabsTrigger>
             </TabsList>
 
             {/* Trend Overview Tab */}
@@ -220,6 +222,19 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>Top Trending Videos</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <div className="mb-4">
+                    <Select onValueChange={setTopMetric} value={topMetric}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Metric" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="VIEWS">Views</SelectItem>
+                        <SelectItem value="LIKES">Likes</SelectItem>
+                        <SelectItem value="DISLIKES">Dislikes</SelectItem>
+                        <SelectItem value="COMMENTS">Comments</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <BarChart
                     width={600}
                     height={300}
@@ -237,7 +252,7 @@ const YouTubeTrendsApp: React.FC = () => {
                     <XAxis dataKey="ytvideoid" />
                     <YAxis />
                     <Legend />
-                    <Bar dataKey="VIEWS" fill="#8884d8" onClick={(data) => handleVideoSelect(data)} />
+                    <Bar dataKey={topMetric} fill="#8884d8" onClick={(data) => handleVideoSelect(data)} />
                   </BarChart>
 
                   {/* Custom Data Display for Top Videos */}
@@ -249,16 +264,7 @@ const YouTubeTrendsApp: React.FC = () => {
                           <strong>Video ID:</strong> {hoveredTopVideosData.YTVIDEOID}
                         </li>
                         <li>
-                          <strong>Views:</strong> {hoveredTopVideosData.VIEWS?.toLocaleString() ?? 'N/A'}
-                        </li>
-                        <li>
-                          <strong>Likes:</strong> {hoveredTopVideosData.LIKES?.toLocaleString() ?? 'N/A'}
-                        </li>
-                        <li>
-                          <strong>Dislikes:</strong> {hoveredTopVideosData.DISLIKES?.toLocaleString() ?? 'N/A'}
-                        </li>
-                        <li>
-                          <strong>Comments:</strong> {hoveredTopVideosData.COMMENTS?.toLocaleString() ?? 'N/A'}
+                          <strong>{topMetric}:</strong> {hoveredTopVideosData[topMetric]?.toLocaleString() ?? 'N/A'}
                         </li>
                       </ul>
                     ) : (
@@ -317,25 +323,6 @@ const YouTubeTrendsApp: React.FC = () => {
                     ) : (
                       <p>Hover over a bar to see details</p>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Video Comparison Tab */}
-            <TabsContent value="comparison">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Video Comparison</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <Input placeholder="Enter YouTube Video ID or Title" />
-                    <Input placeholder="Enter YouTube Video ID or Title" />
-                  </div>
-                  <Button className="w-full">Compare Videos</Button>
-                  <div className="mt-4">
-                    <p>Comparison chart would be displayed here after selecting videos</p>
                   </div>
                 </CardContent>
               </Card>
