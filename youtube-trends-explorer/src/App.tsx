@@ -110,7 +110,7 @@ const YouTubeTrendsApp: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: "50px"}}>
                     <LineChart
                       width={1000}
-                      height={500}
+                      height={390}
                       data={trendData}
                       margin={{left: 20}}
                       onMouseMove={(state) => {
