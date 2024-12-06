@@ -16,7 +16,7 @@ const YouTubeTrendsApp: React.FC = () => {
   const [hoveredTopVideosData, setHoveredTopVideosData] = useState<any | null>(null);
   const [hoveredTopGrowthData, setHoveredTopGrowthData] = useState<any | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [topTenVideos, setTopTenVideos] = useState<any[]>([]);
+  const [selectedVideos, setSelectedVideos] = useState<string[]>([]); // Array to store selected video IDs
 
   // Fetch general trend data or specific video trends
   useEffect(() => {
@@ -58,25 +58,7 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTopVideos();
   }, [topVideosPage]);
 
-  // Fetch the Top 10 Videos (for the Overall Trends section)
-  useEffect(() => {
-    const fetchTopTenVideos = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/top-videos?limit=10`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch top ten videos data');
-        }
-        const data = await response.json();
-        setTopTenVideos(data);
-      } catch (error) {
-        console.error('Error fetching top ten videos data:', error);
-      }
-    };
-
-    fetchTopTenVideos();
-  }, []);
-
-  // Fetch the top growth data
+  // Fetch the Top Growth data
   useEffect(() => {
     const fetchTopGrowth = async () => {
       try {
@@ -94,6 +76,21 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTopGrowth();
   }, []);
 
+  // Handle video selection
+  const handleVideoSelect = (data: any) => {
+    const videoId = data.payload?.YTVIDEOID;
+    if (videoId) {
+      setSelectedVideos((prevSelectedVideos) => {
+        if (prevSelectedVideos.includes(videoId)) {
+          return prevSelectedVideos.filter((id) => id !== videoId); // Deselect video if already selected
+        } else if (prevSelectedVideos.length < 3) {
+          return [...prevSelectedVideos, videoId]; // Select up to 3 videos
+        }
+        return prevSelectedVideos; // Do nothing if 3 videos are already selected
+      });
+    }
+  };
+
   return (
     <div className="p-4">
       <Card className="mb-4">
@@ -101,6 +98,31 @@ const YouTubeTrendsApp: React.FC = () => {
           <CardTitle>YouTube Trends Explorer</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Selected Videos Section */}
+          <div className="mb-4">
+            <h2>Selected Videos (Click on IDs to view on YouTube)</h2>
+            <div>
+              {selectedVideos.length > 0 ? (
+                <ul>
+                  {selectedVideos.map((videoId) => (
+                    <li key={videoId}>
+                      <a
+                        href={`https://www.youtube.com/watch?v=${videoId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {videoId}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No videos selected. Select videos from the tabs below.</p>
+              )}
+            </div>
+          </div>
+
           <Tabs defaultValue="overview">
             <TabsList>
               <TabsTrigger value="overview">Trend Overview</TabsTrigger>
@@ -140,41 +162,17 @@ const YouTubeTrendsApp: React.FC = () => {
                           setHoveredTrendData(null);
                         }
                       }}
-                      onMouseLeave={() => setHoveredTrendData(null)} // Clear data when leaving the chart
+                      onMouseLeave={() => setHoveredTrendData(null)}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="PERIOD" />
                       <YAxis yAxisId="left" />
                       <YAxis yAxisId="right" orientation="right" />
                       <Legend />
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="AVGVIEWS"
-                        stroke="#8884d8"
-                        name="Avg Views"
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="AVGLIKES"
-                        stroke="#82ca9d"
-                        name="Avg Likes"
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="AVGDISLIKES"
-                        stroke="#ff7300"
-                        name="Avg Dislikes"
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="AVGCOMMENTS"
-                        stroke="#ffc658"
-                        name="Avg Comments"
-                      />
+                      <Line yAxisId="left" type="monotone" dataKey="AVGVIEWS" stroke="#8884d8" name="Avg Views" />
+                      <Line yAxisId="right" type="monotone" dataKey="AVGLIKES" stroke="#82ca9d" name="Avg Likes" />
+                      <Line yAxisId="right" type="monotone" dataKey="AVGDISLIKES" stroke="#ff7300" name="Avg Dislikes" />
+                      <Line yAxisId="right" type="monotone" dataKey="AVGCOMMENTS" stroke="#ffc658" name="Avg Comments" />
                     </LineChart>
 
                     {/* Custom Data Display */}
@@ -231,7 +229,7 @@ const YouTubeTrendsApp: React.FC = () => {
                     <XAxis dataKey="ytvideoid" />
                     <YAxis />
                     <Legend />
-                    <Bar dataKey="VIEWS" fill="#8884d8" />
+                    <Bar dataKey="VIEWS" fill="#8884d8" onClick={(data) => handleVideoSelect(data)} />
                   </BarChart>
 
                   {/* Custom Data Display for Top Videos */}
@@ -273,11 +271,7 @@ const YouTubeTrendsApp: React.FC = () => {
             <TabsContent value="top-growth">
               <Card>
                 <CardHeader>
-                  <CardTitle>Top Growth Videos</CardTitle>
-                  <p style={{ fontSize: '0.9rem', color: 'gray' }}>
-                    Growth is measured by the increase in views over a specified time period. It represents the net
-                    change in views, not a percentage.
-                  </p>
+                  <CardTitle>Top Growth in Video Views (Absolute Growth)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <BarChart
@@ -297,7 +291,7 @@ const YouTubeTrendsApp: React.FC = () => {
                     <XAxis dataKey="YTVIDEOID" />
                     <YAxis />
                     <Legend />
-                    <Bar dataKey="GROWTH" fill="#82ca9d" />
+                    <Bar dataKey="GROWTH" fill="#82ca9d" onClick={(data) => handleVideoSelect(data)} />
                   </BarChart>
 
                   {/* Custom Data Display for Top Growth */}
@@ -309,7 +303,7 @@ const YouTubeTrendsApp: React.FC = () => {
                           <strong>Video ID:</strong> {hoveredTopGrowthData.YTVIDEOID}
                         </li>
                         <li>
-                          <strong>Growth in Views:</strong> {hoveredTopGrowthData.GROWTH?.toLocaleString() ?? 'N/A'}
+                          <strong>Growth:</strong> {hoveredTopGrowthData.GROWTH?.toLocaleString() ?? 'N/A'}
                         </li>
                       </ul>
                     ) : (
