@@ -221,7 +221,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={topVideosData}
                     onMouseMove={(state) => {
