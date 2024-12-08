@@ -241,7 +241,7 @@ const YouTubeTrendsApp: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="mb-4" style={{marginTop: '10x'}}>
+                  <div className="mb-4">
                     <Select onValueChange={setTimeAggregation} value={timeAggregation}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select time aggregation" />
@@ -265,19 +265,6 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>Top Trending Videos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <Select onValueChange={setTopMetric} value={topMetric}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Metric" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="VIEWS">Views</SelectItem>
-                        <SelectItem value="LIKES">Likes</SelectItem>
-                        <SelectItem value="DISLIKES">Dislikes</SelectItem>
-                        <SelectItem value="COMMENTS">Comments</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
 
                   <div style={{ marginLeft: '20px'}}>
                   <BarChart
@@ -302,7 +289,7 @@ const YouTubeTrendsApp: React.FC = () => {
                   </div>
 
                   {/* Custom Data Display for Top Videos */}
-                  <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                  <div style={{ marginLeft: '20px', marginBottom: '150px', maxWidth: '300px' }}>
                     <h3>Hovered Video Data:</h3>
                     {hoveredTopVideosData ? (
                       <ul>
@@ -316,6 +303,20 @@ const YouTubeTrendsApp: React.FC = () => {
                     ) : (
                       <p>Hover over a bar to see details</p>
                     )}
+                  </div>
+
+                  <div className="mb-4">
+                    <Select onValueChange={setTopMetric} value={topMetric}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Metric" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="VIEWS">Views</SelectItem>
+                        <SelectItem value="LIKES">Likes</SelectItem>
+                        <SelectItem value="DISLIKES">Dislikes</SelectItem>
+                        <SelectItem value="COMMENTS">Comments</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Pagination Buttons */}
@@ -382,7 +383,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={mostEngagingData}
                     onMouseMove={(state) => {
