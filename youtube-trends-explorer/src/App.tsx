@@ -4,7 +4,7 @@ import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Tooltip } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 const YouTubeTrendsApp: React.FC = () => {
   const [timeAggregation, setTimeAggregation] = useState<string>('daily');
@@ -25,7 +25,7 @@ const YouTubeTrendsApp: React.FC = () => {
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]); // Array to store selected video IDs
   const [topMetric, setTopMetric] = useState<string>('VIEWS'); // Metric for top videos chart
 
-  // Fetch trends
+  // Fetch general trend data or specific video trends
   useEffect(() => {
     const fetchTrends = async () => {
       try {
@@ -47,7 +47,7 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTrends();
   }, [timeAggregation, selectedVideoId]);
 
-  // Fetch top videos
+  // Fetch top videos data whenever the page or metric changes
   useEffect(() => {
     const fetchTopVideos = async () => {
       try {
@@ -67,7 +67,7 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTopVideos();
   }, [topVideosPage, topMetric]);
 
-  // Fetch top growth
+  // Fetch the Top Growth data
   useEffect(() => {
     const fetchTopGrowth = async () => {
       try {
@@ -85,7 +85,7 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTopGrowth();
   }, []);
 
-  // Fetch most engaging
+  // Fetch most engaging videos data
   useEffect(() => {
     const fetchMostEngaging = async () => {
       try {
@@ -132,30 +132,6 @@ const YouTubeTrendsApp: React.FC = () => {
       console.error('Error fetching comparison data:', error);
     }
   };
-
-  // Transform compareData into a structure suitable for a line chart
-  // We assume TIMESTAMP can be used as the x-axis. Multiple YTVIDEOIDs will become multiple lines.
-  const transformedCompareData = React.useMemo(() => {
-    if (compareData.length === 0) return [];
-
-    // Get unique video IDs
-    const uniqueVideoIDs = Array.from(new Set(compareData.map((d: any) => d.YTVIDEOID)));
-
-    // Group by TIMESTAMP
-    const byTimestamp = new Map<string, any>();
-    for (const row of compareData) {
-      const { YTVIDEOID, TIMESTAMP, VIEWS } = row;
-      if (!byTimestamp.has(TIMESTAMP)) {
-        byTimestamp.set(TIMESTAMP, { TIMESTAMP });
-      }
-      byTimestamp.get(TIMESTAMP)[YTVIDEOID] = VIEWS;
-    }
-
-    const result = Array.from(byTimestamp.values());
-    // Sort by TIMESTAMP (assuming TIMESTAMP is lexicographically sortable)
-    result.sort((a: any, b: any) => (a.TIMESTAMP < b.TIMESTAMP ? -1 : a.TIMESTAMP > b.TIMESTAMP ? 1 : 0));
-    return { data: result, videoIDs: uniqueVideoIDs };
-  }, [compareData]);
 
   return (
     <div className="p-4">
@@ -205,19 +181,7 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>{selectedVideoId ? `Trends for Video ID: ${selectedVideoId}` : "Overall Trends"}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <Select onValueChange={setTimeAggregation} value={timeAggregation}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time aggregation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: "50px" }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: "50px", marginBottom: '120px'}}>
                     <LineChart
                       width={1000}
                       height={390}
@@ -230,13 +194,12 @@ const YouTubeTrendsApp: React.FC = () => {
                           setHoveredTrendData(null);
                         }
                       }}
-                      onMouseLeave={() => setHoveredTrendData(null)}
-                    >
+                      onMouseLeave={() => setHoveredTrendData(null)}>
+
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="PERIOD" />
                       <YAxis yAxisId="left" />
                       <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip />
                       <Legend />
                       <Line yAxisId="left" type="monotone" dataKey="AVGVIEWS" stroke="#8884d8" name="Avg Views" />
                       <Line yAxisId="right" type="monotone" dataKey="AVGLIKES" stroke="#82ca9d" name="Avg Likes" />
@@ -277,6 +240,20 @@ const YouTubeTrendsApp: React.FC = () => {
                       )}
                     </div>
                   </div>
+
+                  <div className="mb-4">
+                    <Select onValueChange={setTimeAggregation} value={timeAggregation}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select time aggregation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                 </CardContent>
               </Card>
             </TabsContent>
@@ -288,21 +265,10 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>Top Trending Videos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <Select onValueChange={setTopMetric} value={topMetric}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Metric" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="VIEWS">Views</SelectItem>
-                        <SelectItem value="LIKES">Likes</SelectItem>
-                        <SelectItem value="DISLIKES">Dislikes</SelectItem>
-                        <SelectItem value="COMMENTS">Comments</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+
+                  <div style={{ marginLeft: '20px'}}>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={topVideosData}
                     onMouseMove={(state) => {
@@ -317,13 +283,13 @@ const YouTubeTrendsApp: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="ytvideoid" />
                     <YAxis />
-                    <Tooltip />
                     <Legend />
                     <Bar dataKey={topMetric} fill="#8884d8" onClick={(data) => handleVideoSelect(data)} />
                   </BarChart>
+                  </div>
 
                   {/* Custom Data Display for Top Videos */}
-                  <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                  <div style={{ marginLeft: '20px', marginBottom: '150px', maxWidth: '300px' }}>
                     <h3>Hovered Video Data:</h3>
                     {hoveredTopVideosData ? (
                       <ul>
@@ -337,6 +303,20 @@ const YouTubeTrendsApp: React.FC = () => {
                     ) : (
                       <p>Hover over a bar to see details</p>
                     )}
+                  </div>
+
+                  <div className="mb-4">
+                    <Select onValueChange={setTopMetric} value={topMetric}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Metric" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="VIEWS">Views</SelectItem>
+                        <SelectItem value="LIKES">Likes</SelectItem>
+                        <SelectItem value="DISLIKES">Dislikes</SelectItem>
+                        <SelectItem value="COMMENTS">Comments</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Pagination Buttons */}
@@ -356,7 +336,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={topGrowthData}
                     onMouseMove={(state) => {
@@ -371,7 +351,6 @@ const YouTubeTrendsApp: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="YTVIDEOID" />
                     <YAxis />
-                    <Tooltip />
                     <Legend />
                     <Bar dataKey="GROWTH" fill="#82ca9d" onClick={(data) => handleVideoSelect(data)} />
                   </BarChart>
@@ -404,7 +383,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={mostEngagingData}
                     onMouseMove={(state) => {
@@ -419,7 +398,6 @@ const YouTubeTrendsApp: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="YTVIDEOID" />
                     <YAxis />
-                    <Tooltip />
                     <Legend />
                     <Bar dataKey="ENGAGEMENT" fill="#FFBB28" onClick={(data) => handleVideoSelect(data)} />
                   </BarChart>
@@ -460,80 +438,36 @@ const YouTubeTrendsApp: React.FC = () => {
                       Fetch Comparison Data
                     </Button>
                   </div>
-
-                  {/* Transform compareData into a structure suitable for line chart */}
-                  {(() => {
-                    if (compareData.length === 0) return null;
-
-                    // Get unique video IDs
-                    const uniqueVideoIDs = Array.from(new Set(compareData.map((d: any) => d.YTVIDEOID)));
-
-                    // Group by TIMESTAMP
-                    const byTimestamp = new Map<string, any>();
-                    for (const row of compareData) {
-                      const { YTVIDEOID, TIMESTAMP, VIEWS } = row;
-                      if (!byTimestamp.has(TIMESTAMP)) {
-                        byTimestamp.set(TIMESTAMP, { TIMESTAMP });
-                      }
-                      byTimestamp.get(TIMESTAMP)[YTVIDEOID] = VIEWS;
-                    }
-
-                    const result = Array.from(byTimestamp.values());
-                    // Sort by TIMESTAMP
-                    result.sort((a: any, b: any) =>
-                      a.TIMESTAMP < b.TIMESTAMP ? -1 : a.TIMESTAMP > b.TIMESTAMP ? 1 : 0
-                    );
-
-                    return (
-                      <>
-                        <h3 className="mt-4 mb-2">Visual Comparison (Views Over Time)</h3>
-                        <LineChart width={600} height={300} data={result} margin={{ left: 20 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="TIMESTAMP" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          {uniqueVideoIDs.map((vid, idx) => (
-                            <Line
-                              key={vid}
-                              type="monotone"
-                              dataKey={vid}
-                              stroke={idx % 2 === 0 ? "#8884d8" : "#82ca9d"}
-                              name={vid}
-                            />
+                  {compareData.length > 0 ? (
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="border-b p-2">Video ID</th>
+                            <th className="border-b p-2">Timestamp</th>
+                            <th className="border-b p-2">Views</th>
+                            <th className="border-b p-2">Likes</th>
+                            <th className="border-b p-2">Dislikes</th>
+                            <th className="border-b p-2">Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {compareData.map((row, index) => (
+                            <tr key={index}>
+                              <td className="border-b p-2">{row.YTVIDEOID}</td>
+                              <td className="border-b p-2">{row.TIMESTAMP}</td>
+                              <td className="border-b p-2">{row.VIEWS?.toLocaleString() ?? 'N/A'}</td>
+                              <td className="border-b p-2">{row.LIKES?.toLocaleString() ?? 'N/A'}</td>
+                              <td className="border-b p-2">{row.DISLIKES?.toLocaleString() ?? 'N/A'}</td>
+                              <td className="border-b p-2">{row.COMMENTS?.toLocaleString() ?? 'N/A'}</td>
+                            </tr>
                           ))}
-                        </LineChart>
-
-                        <h3 className="mt-4 mb-2">Raw Comparison Data</h3>
-                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                          <table className="w-full text-left border-collapse">
-                            <thead>
-                              <tr>
-                                <th className="border-b p-2">Video ID</th>
-                                <th className="border-b p-2">Timestamp</th>
-                                <th className="border-b p-2">Views</th>
-                                <th className="border-b p-2">Likes</th>
-                                <th className="border-b p-2">Dislikes</th>
-                                <th className="border-b p-2">Comments</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {compareData.map((row, index) => (
-                                <tr key={index}>
-                                  <td className="border-b p-2">{row.YTVIDEOID}</td>
-                                  <td className="border-b p-2">{row.TIMESTAMP}</td>
-                                  <td className="border-b p-2">{row.VIEWS?.toLocaleString() ?? 'N/A'}</td>
-                                  <td className="border-b p-2">{row.LIKES?.toLocaleString() ?? 'N/A'}</td>
-                                  <td className="border-b p-2">{row.DISLIKES?.toLocaleString() ?? 'N/A'}</td>
-                                  <td className="border-b p-2">{row.COMMENTS?.toLocaleString() ?? 'N/A'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </>
-                    );
-                  })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p>No comparison data available. Please fetch data after entering IDs.</p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
