@@ -277,6 +277,23 @@ const YouTubeTrendsApp: React.FC = () => {
                       )}
                     </div>
                   </div>
+<<<<<<< HEAD
+=======
+
+                  <div className="mb-4">
+                    <Select onValueChange={setTimeAggregation} value={timeAggregation}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select time aggregation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+>>>>>>> 627b64e3ffd734b2040d88897dd8dd1b6c6833be
                 </CardContent>
               </Card>
             </TabsContent>
@@ -288,6 +305,7 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>Top Trending Videos</CardTitle>
                 </CardHeader>
                 <CardContent>
+<<<<<<< HEAD
                   <div className="mb-4">
                     <Select onValueChange={setTopMetric} value={topMetric}>
                       <SelectTrigger>
@@ -301,6 +319,10 @@ const YouTubeTrendsApp: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+=======
+
+                  <div style={{ marginLeft: '20px'}}>
+>>>>>>> 627b64e3ffd734b2040d88897dd8dd1b6c6833be
                   <BarChart
                     width={600}
                     height={300}
@@ -323,7 +345,7 @@ const YouTubeTrendsApp: React.FC = () => {
                   </BarChart>
 
                   {/* Custom Data Display for Top Videos */}
-                  <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                  <div style={{ marginLeft: '20px', marginBottom: '150px', maxWidth: '300px' }}>
                     <h3>Hovered Video Data:</h3>
                     {hoveredTopVideosData ? (
                       <ul>
@@ -337,6 +359,20 @@ const YouTubeTrendsApp: React.FC = () => {
                     ) : (
                       <p>Hover over a bar to see details</p>
                     )}
+                  </div>
+
+                  <div className="mb-4">
+                    <Select onValueChange={setTopMetric} value={topMetric}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Metric" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="VIEWS">Views</SelectItem>
+                        <SelectItem value="LIKES">Likes</SelectItem>
+                        <SelectItem value="DISLIKES">Dislikes</SelectItem>
+                        <SelectItem value="COMMENTS">Comments</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Pagination Buttons */}
@@ -404,7 +440,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={mostEngagingData}
                     onMouseMove={(state) => {
