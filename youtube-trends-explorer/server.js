@@ -172,3 +172,26 @@ app.get('/compare-videos', async (req, res) => {
     });
   }
 });
+
+// Route to fetch most engaging videos
+app.get('/most-engaging', async (req, res) => {
+  const query = `
+    SELECT ytvideoid,
+           (MAX(likes) + MAX(comments)) AS ENGAGEMENT
+    FROM "VPERSAUD1".PerformanceMetrics
+    GROUP BY ytvideoid
+    ORDER BY ENGAGEMENT DESC
+    FETCH FIRST 10 ROWS ONLY
+  `;
+
+  try {
+    const result = await db.simpleExecute(query, []);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching most engaging videos:', error);
+    res.status(500).json({
+      error: 'Failed to fetch most engaging videos',
+      details: error.message,
+    });
+  }
+});

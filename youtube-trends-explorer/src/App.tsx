@@ -12,9 +12,15 @@ const YouTubeTrendsApp: React.FC = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [topVideosData, setTopVideosData] = useState<any[]>([]);
   const [topGrowthData, setTopGrowthData] = useState<any[]>([]);
+  const [mostEngagingData, setMostEngagingData] = useState<any[]>([]);
+  const [compareIds, setCompareIds] = useState<string>('');
+  const [compareData, setCompareData] = useState<any[]>([]);
+
   const [hoveredTrendData, setHoveredTrendData] = useState<any | null>(null);
   const [hoveredTopVideosData, setHoveredTopVideosData] = useState<any | null>(null);
   const [hoveredTopGrowthData, setHoveredTopGrowthData] = useState<any | null>(null);
+  const [hoveredMostEngagingData, setHoveredMostEngagingData] = useState<any | null>(null);
+
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]); // Array to store selected video IDs
   const [topMetric, setTopMetric] = useState<string>('VIEWS'); // Metric for top videos chart
@@ -79,18 +85,51 @@ const YouTubeTrendsApp: React.FC = () => {
     fetchTopGrowth();
   }, []);
 
-  // Handle video selection
+  // Fetch most engaging videos data
+  useEffect(() => {
+    const fetchMostEngaging = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/most-engaging');
+        if (!response.ok) {
+          throw new Error('Failed to fetch most engaging videos');
+        }
+        const data = await response.json();
+        setMostEngagingData(data);
+      } catch (error) {
+        console.error('Error fetching most engaging videos:', error);
+      }
+    };
+
+    fetchMostEngaging();
+  }, []);
+
+  // Handle video selection from charts
   const handleVideoSelect = (data: any) => {
     const videoId = data.payload?.YTVIDEOID;
     if (videoId) {
       setSelectedVideos((prevSelectedVideos) => {
         if (prevSelectedVideos.includes(videoId)) {
-          return prevSelectedVideos.filter((id) => id !== videoId); // Deselect video if already selected
+          return prevSelectedVideos.filter((id) => id !== videoId); // Deselect if selected
         } else if (prevSelectedVideos.length < 3) {
-          return [...prevSelectedVideos, videoId]; // Select up to 3 videos
+          return [...prevSelectedVideos, videoId]; // Select up to 3
         }
-        return prevSelectedVideos; // Do nothing if 3 videos are already selected
+        return prevSelectedVideos; // If already have 3 selected, do nothing
       });
+    }
+  };
+
+  // Fetch and display compare videos data
+  const handleCompareFetch = async () => {
+    if (!compareIds) return;
+    try {
+      const response = await fetch(`http://localhost:5000/compare-videos?ytvideoids=${compareIds}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch comparison data');
+      }
+      const data = await response.json();
+      setCompareData(data);
+    } catch (error) {
+      console.error('Error fetching comparison data:', error);
     }
   };
 
@@ -131,6 +170,8 @@ const YouTubeTrendsApp: React.FC = () => {
               <TabsTrigger value="overview">Trend Overview</TabsTrigger>
               <TabsTrigger value="top-videos">Top Videos</TabsTrigger>
               <TabsTrigger value="top-growth">Top Growth</TabsTrigger>
+              <TabsTrigger value="most-engaging">Most Engaging</TabsTrigger>
+              <TabsTrigger value="compare">Compare Videos</TabsTrigger>
             </TabsList>
 
             {/* Trend Overview Tab */}
@@ -327,6 +368,104 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Most Engaging Tab */}
+            <TabsContent value="most-engaging">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Most Engaging Videos (Likes + Comments)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BarChart
+                    width={600}
+                    height={300}
+                    data={mostEngagingData}
+                    onMouseMove={(state) => {
+                      if (state && state.activePayload && state.activePayload.length > 0) {
+                        setHoveredMostEngagingData(state.activePayload[0].payload);
+                      } else {
+                        setHoveredMostEngagingData(null);
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredMostEngagingData(null)}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="YTVIDEOID" />
+                    <YAxis />
+                    <Legend />
+                    <Bar dataKey="ENGAGEMENT" fill="#FFBB28" onClick={(data) => handleVideoSelect(data)} />
+                  </BarChart>
+                  <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
+                    <h3>Hovered Engagement Data:</h3>
+                    {hoveredMostEngagingData ? (
+                      <ul>
+                        <li>
+                          <strong>Video ID:</strong> {hoveredMostEngagingData.YTVIDEOID}
+                        </li>
+                        <li>
+                          <strong>Engagement (Likes+Comments):</strong> {hoveredMostEngagingData.ENGAGEMENT?.toLocaleString() ?? 'N/A'}
+                        </li>
+                      </ul>
+                    ) : (
+                      <p>Hover over a bar to see details</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Compare Videos Tab */}
+            <TabsContent value="compare">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Compare Videos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <p>Enter multiple YouTube Video IDs separated by commas:</p>
+                    <Input
+                      placeholder="e.g. XsX3ATc3FbA,FuXNumBwDOM"
+                      value={compareIds}
+                      onChange={(e) => setCompareIds(e.target.value)}
+                    />
+                    <Button className="mt-2 w-full" onClick={handleCompareFetch}>
+                      Fetch Comparison Data
+                    </Button>
+                  </div>
+                  {compareData.length > 0 ? (
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="border-b p-2">Video ID</th>
+                            <th className="border-b p-2">Timestamp</th>
+                            <th className="border-b p-2">Views</th>
+                            <th className="border-b p-2">Likes</th>
+                            <th className="border-b p-2">Dislikes</th>
+                            <th className="border-b p-2">Comments</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {compareData.map((row, index) => (
+                            <tr key={index}>
+                              <td className="border-b p-2">{row.YTVIDEOID}</td>
+                              <td className="border-b p-2">{row.TIMESTAMP}</td>
+                              <td className="border-b p-2">{row.VIEWS?.toLocaleString() ?? 'N/A'}</td>
+                              <td className="border-b p-2">{row.LIKES?.toLocaleString() ?? 'N/A'}</td>
+                              <td className="border-b p-2">{row.DISLIKES?.toLocaleString() ?? 'N/A'}</td>
+                              <td className="border-b p-2">{row.COMMENTS?.toLocaleString() ?? 'N/A'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p>No comparison data available. Please fetch data after entering IDs.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
