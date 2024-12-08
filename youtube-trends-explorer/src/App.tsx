@@ -140,19 +140,7 @@ const YouTubeTrendsApp: React.FC = () => {
                   <CardTitle>{selectedVideoId ? `Trends for Video ID: ${selectedVideoId}` : "Overall Trends"}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <Select onValueChange={setTimeAggregation} value={timeAggregation}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time aggregation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: "50px" }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: "50px", marginBottom: '120px'}}>
                     <LineChart
                       width={1000}
                       height={390}
@@ -165,8 +153,8 @@ const YouTubeTrendsApp: React.FC = () => {
                           setHoveredTrendData(null);
                         }
                       }}
-                      onMouseLeave={() => setHoveredTrendData(null)}
-                    >
+                      onMouseLeave={() => setHoveredTrendData(null)}>
+
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="PERIOD" />
                       <YAxis yAxisId="left" />
@@ -211,6 +199,20 @@ const YouTubeTrendsApp: React.FC = () => {
                       )}
                     </div>
                   </div>
+
+                  <div className="mb-4" style={{marginTop: '10x'}}>
+                    <Select onValueChange={setTimeAggregation} value={timeAggregation}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select time aggregation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                 </CardContent>
               </Card>
             </TabsContent>
@@ -235,8 +237,10 @@ const YouTubeTrendsApp: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div style={{ marginLeft: '20px'}}>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={topVideosData}
                     onMouseMove={(state) => {
@@ -254,6 +258,7 @@ const YouTubeTrendsApp: React.FC = () => {
                     <Legend />
                     <Bar dataKey={topMetric} fill="#8884d8" onClick={(data) => handleVideoSelect(data)} />
                   </BarChart>
+                  </div>
 
                   {/* Custom Data Display for Top Videos */}
                   <div style={{ marginLeft: '20px', maxWidth: '300px' }}>
@@ -289,7 +294,7 @@ const YouTubeTrendsApp: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <BarChart
-                    width={600}
+                    width={1000}
                     height={300}
                     data={topGrowthData}
                     onMouseMove={(state) => {
